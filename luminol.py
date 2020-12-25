@@ -24,6 +24,233 @@ class ChemReactionTest(Scene):
         self.play(react.show(reactant_product_simultaneity=True))
 
 
+class LuminolIntro(Scene):
+    def construct(self):
+        word = Text("Chemiluminesence").scale(2).center()
+        self.add(
+            word,
+            # get_submobject_index_labels(word)
+        )
+
+        brace1 = BraceText(word[0:5], "``chemical''", brace_direction=UP)
+        brace2 = BraceText(word[5:], "``light''", brace_direction=DOWN)
+
+        self.play(brace2.creation_anim(), Wait(), word[5:].set_color, BLUE)
+        self.play(brace1.creation_anim(), Wait(), word[0:5].set_color, RED)
+        self.wait(2)
+
+        self.clear()
+
+        self.show_examples()
+
+        luminol = ChemWithName(
+            LUMINOL,
+            "Luminol\\\\\\footnotesize (5-Amino-2,3-dihydrophthalazine-1,4-dione)",
+        ).shift(UP)
+        self.play(luminol.creation_anim())
+        self.wait(2)
+
+        self.play(FadeOutAndShift(luminol.name), luminol.chem.shift, DOWN + 4 * LEFT)
+
+        luminol_para = Paragraph(
+            "Used in forensics", "to locate blood traces", "at crime scenes"
+        ).to_edge(RIGHT)
+
+        self.play(Write(luminol_para))
+        self.wait()
+
+    def show_examples(self):
+        luciferin_bio_photo = ImageMobject(Path(".\\references\\firefly_glowing.jpg"))
+        luceferin_text = Tex("Fireflies\\\\(luciferin)")
+        luceferin_group = (
+            Group(luciferin_bio_photo, luceferin_text).arrange(DOWN).to_edge(LEFT)
+        )
+
+        glow_stick_photo = ImageMobject(Path(".\\references\\glow_stick.jpg"))
+        glow_stick_text = Tex("Glow sticks\\\\(Cyalume)")
+        glow_stick_group = (
+            Group(glow_stick_photo, glow_stick_text).arrange(DOWN).to_edge(RIGHT)
+        )
+
+        self.play(
+            FadeInFrom(luceferin_group[0], UP),
+            FadeInFrom(luceferin_group[1], DOWN),
+        )
+
+        self.wait()
+
+        self.play(
+            FadeInFrom(glow_stick_group[0], UP),
+            FadeInFrom(glow_stick_group[1], DOWN),
+        )
+
+        self.wait()
+
+        self.play(
+            FadeOutAndShift(luceferin_group),
+            FadeOutAndShift(glow_stick_group),
+        )
+
+
+class Synthesis(Scene):
+    def setup(self):
+        self.divider = Line(
+            start=config["frame_y_radius"] * DOWN,
+            end=config["frame_y_radius"] * UP,
+        ).shift(RIGHT * 1.75)
+
+        self.steps_header = (
+            Text("Steps").next_to(self.divider).set_y(config["frame_y_radius"] - 1.5)
+        )
+        self.play(ShowCreation(self.divider), Write(self.steps_header))
+        Transform
+
+    def construct(self):
+        self.steps = (
+            BulletedList(
+                "Heat 3-nitrophthalic\\\\acid with hydrazine\\\\in glycerol",
+                "Reduce nitro group to\\\\amino group using\\\\sodium dithionite",
+                tex_environment="flushleft",
+            )
+            .next_to(self.steps_header, DOWN, buff=1.25)
+            .shift(1.75 * RIGHT)
+        )
+        self.play(Write(self.steps))
+
+        self.play(
+            self.steps.fade_all_but,
+            0,
+        )
+        self.wait()
+
+        ## Note: bond angles totally not accurate. required for demonstration and transtition purposes.
+        npa = ChemObject(
+            "*6(-=(-(=[-2]O)-[:30]O(-[-2]H))-(-(=[2]O)-[:-30]O(-[2]H))=(-NO_2)-=)"
+        ).set_x(-1.5 * self.divider.get_x())
+
+        self.play(Write(npa))
+
+        hydrazine = (
+            ChemObject("N(-[3]H)(-[-3]H)-N(-[1]H)(-[-1]H)")
+            .move_to(npa)
+            .shift(2 * RIGHT)
+            .scale(0.85)
+        )
+
+        self.play(
+            npa.shift,
+            LEFT * 2,
+            Write(hydrazine),
+        )
+
+        self.play(
+            Rotate(hydrazine, angle=TAU / 4, run_time=0.5),
+        )
+
+        self.play(hydrazine.shift, LEFT)
+        self.play(
+            Rotate(hydrazine[0][0], -PI / 2),
+            Rotate(hydrazine[0][1], -PI / 2),
+            Rotate(hydrazine[0][3], -PI / 2),
+            Rotate(hydrazine[0][5], -PI / 2),
+            Rotate(hydrazine[0][7], -PI / 2),
+            Rotate(hydrazine[0][9], -PI / 2),
+            Transform(
+                hydrazine[0][8], hydrazine[0][10].copy().scale(1.25).shift(LEFT * 1.25)
+            ),
+            Transform(
+                hydrazine[0][2], hydrazine[0][4].copy().scale(1.25).shift(LEFT * 1.25)
+            ),
+        )
+        self.wait(2)
+
+        water_grp_1 = VGroup(
+            npa[0][16],
+            npa[0][18],
+            npa[0][19],
+            hydrazine[0][7],
+            hydrazine[0][8],
+        )
+
+        water_grp_2 = VGroup(
+            npa[0][7],
+            npa[0][9],
+            npa[0][10],
+            hydrazine[0][1],
+            hydrazine[0][2],
+        )
+        self.play(FadeOutAndShift(water_grp_1, UP), FadeOutAndShift(water_grp_2, DOWN))
+
+        hydrazine = VGroup(
+            hydrazine[0][0],
+            hydrazine[0][3],
+            hydrazine[0][4],
+            hydrazine[0][5],
+            hydrazine[0][6],
+            hydrazine[0][9],
+            hydrazine[0][10],
+        )
+
+        self.play(hydrazine.shift, LEFT * 1.5)
+
+        self.wait()
+
+        sodium_thiocyanide = ChemObject("Na_2 S_2 O_4")
+        self.play(self.steps.fade_all_but, 1, Write(sodium_thiocyanide))
+
+        footnote = (
+            Tex(
+                "* I'm not animating the reduction, just assume sodium thiocyanide is a reducing agent\\\\and it's reduced the nitro group",
+                tex_environment="flushleft",
+            )
+            .scale(0.4)
+            .to_corner()
+        )
+
+        self.play(npa[0][23].set_color, YELLOW)
+        hydrogen = ChemObject("H").set_color(RED).move_to(npa[0][23])
+
+        self.wait(2)
+        self.play(
+            FadeOutAndShift(npa[0][23], UP), FadeInFrom(hydrogen), Write(footnote)
+        )
+        self.wait()
+        self.play(
+            FadeOutAndShift(sodium_thiocyanide),
+            FadeOutAndShift(footnote),
+            hydrogen.set_color,
+            WHITE,
+        )
+        luminol_created = VGroup(
+            npa[0][0:7],
+            npa[0][8],
+            npa[0][11:16],
+            npa[0][17],
+            npa[0][20:23],
+            npa[0][24:],
+            hydrogen,
+            hydrazine,
+        )
+        self.play(
+            luminol_created.shift,
+            RIGHT * 2,
+        )
+
+        luminol_label = Tex("Luminol").to_edge(DOWN).shift(2.5 * LEFT + UP * 0.5)
+
+        self.play(Write(luminol_label))
+        self.wait()
+        self.play(
+            Uncreate(self.divider),
+            FadeOut(VGroup(self.steps,self.steps_header)),
+            VGroup(luminol_created,luminol_label).center
+        )
+        self.add(
+            get_submobject_index_labels(hydrazine[0]),
+            get_submobject_index_labels(npa[0]),
+        )
+
+
 class LuminolReactionStyle1(Scene):
     def construct(self):
         luminol = ChemWithName(LUMINOL, "Luminol")
