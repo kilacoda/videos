@@ -5,6 +5,34 @@ LUMINOL = "*6(-=*6(-(=O)-N(-H)-N(-H)-(=O)--)-=(-NH_2)-=)"
 DIANION_1 = "*6(-=*6(-(=O)-\\charge{45:2pt=$\\scriptstyle-$}{N}-\\charge{45:2pt=$\\scriptstyle-$}{N}-(=O)--)-=(-NH_2)-=)"
 O2 = "O(=[-2]O)"
 
+config["tex_template"] = TexTemplateLibrary.simple
+
+
+class MechanismScene(Scene):
+    def setup(self):
+        self.divider = Line(
+            start=config["frame_y_radius"] * DOWN,
+            end=config["frame_y_radius"] * UP,
+        ).shift(RIGHT * 1.75)
+
+        self.steps_header = (
+            Text("Steps").next_to(self.divider).set_y(config["frame_y_radius"] - 1.5)
+        )
+        self.play(ShowCreation(self.divider), Write(self.steps_header))
+
+    def add_steps(self, *steps,animation = Write,buff_factor=0.25,scale_factor=0.8,extra_methods:str=None, **bulleted_list_kwargs):
+        self.steps = (
+            BulletedList(*steps, **bulleted_list_kwargs)
+            .next_to(self.steps_header, DOWN, buff=buff_factor)
+            .shift(1.75 * RIGHT)
+            .scale(scale_factor)
+        )
+
+        ## This could be pretty handy.
+        exec(f"self.steps.{extra_methods}")
+
+        self.play(animation(self.steps))
+
 
 class ChemObjectTest(Scene):
     def construct(self):
@@ -103,7 +131,6 @@ class Synthesis(Scene):
             Text("Steps").next_to(self.divider).set_y(config["frame_y_radius"] - 1.5)
         )
         self.play(ShowCreation(self.divider), Write(self.steps_header))
-        Transform
 
     def construct(self):
         self.steps = (
@@ -242,8 +269,8 @@ class Synthesis(Scene):
         self.wait()
         self.play(
             Uncreate(self.divider),
-            FadeOut(VGroup(self.steps,self.steps_header)),
-            VGroup(luminol_created,luminol_label).center
+            FadeOut(VGroup(self.steps, self.steps_header)),
+            VGroup(luminol_created, luminol_label).center,
         )
         self.add(
             get_submobject_index_labels(hydrazine[0]),
@@ -251,15 +278,28 @@ class Synthesis(Scene):
         )
 
 
-class LuminolReactionStyle1(Scene):
+class LuminolReactionMechanism(MechanismScene):
     def construct(self):
-        luminol = ChemWithName(LUMINOL, "Luminol")
-        hydroxide_1 = ChemObject("-OH").to_corner(UR, buff=1.5)
-        hydroxide_2 = ChemObject("-OH").to_corner(DR, buff=1.5)
+
+        self.add_steps(
+            "Deprotonation (removal\\\\of hydrogen) and\\\\dianion formation",
+            "Rearrangement of charges\\\\(tautomerisation)",
+            "Liberation of $\\text{N}_2$\\\\and formation of\\\\unstable 3-APA (3-APA*)",
+            "Release of photon\\\\emitting blue light",
+            extra_methods="shift(UP*0.65)"
+        )
+
+        luminol = ChemWithName(LUMINOL, "Luminol").shift(LEFT * 3)
+        hydroxide_1 = ChemObject("-OH").next_to(self.steps_header, LEFT, buff=0.75)
+        hydroxide_2 = ChemObject("-OH").next_to(hydroxide_1, DOWN, buff=4.5)
 
         self.play(luminol.creation_anim())
         self.wait()
 
+        ## Step 1 start
+        self.play(
+            self.steps.fade_all_but,0
+        )
         self.play(
             FadeInFrom(hydroxide_1, UP),
             FadeInFrom(hydroxide_2, DOWN),
@@ -293,6 +333,14 @@ class LuminolReactionStyle1(Scene):
             FadeOutAndShift(water_group_1, UP),
             FadeOutAndShift(water_group_2, DOWN),
         )
+        ## Step 1 end
+
+        self.wait(2)
+
+        ## Step 2 start
+        self.play(
+            self.steps.fade_all_but,1
+        )
 
         self.play(
             Transform(
@@ -321,8 +369,14 @@ class LuminolReactionStyle1(Scene):
             0.05 * RIGHT,
             # luminol.chem[0][14].next_to,luminol.chem[0][15],DL,dict(buff=0.15)
         )
+        ## Step 2 end
 
-        o2 = ChemObject(O2).to_edge(RIGHT, buff=2)
+        ## Step 3 start
+        self.play(
+            self.steps.fade_all_but,2
+        )
+
+        o2 = ChemObject(O2).next_to(luminol.chem, buff=0.75)
 
         self.play(Write(o2))
 
@@ -355,6 +409,8 @@ class LuminolReactionStyle1(Scene):
             ),
         )
 
+        self.wait()
+
         self.play(
             Transform(
                 luminol.chem[0][8],
@@ -380,6 +436,7 @@ class LuminolReactionStyle1(Scene):
             0.05 * LEFT,
         )
 
+        self.wait(2.5)
         n2 = VGroup(
             luminol.chem[0][7],
             luminol.chem[0][8],
@@ -414,7 +471,7 @@ class LuminolReactionStyle1(Scene):
                 charge="*",
             ).scale(0.75),
             "3-Aminophthalamine* (3-APA*)",
-        )
+        ).shift(LEFT*2)
 
         three_APA.chem[0][45:].shift(RIGHT * 0.2)
         o2[0][0].clear_updaters()
@@ -460,13 +517,20 @@ class LuminolReactionStyle1(Scene):
             ),
             FadeInFrom(three_APA.name),
         )
-        light = Tex("h$\\nu$").center().shift(RIGHT * 1.5)
+        ## Step 3 end
+
+        ## Step 4 start
+        self.play(
+            self.steps.fade_all_but,3
+        )
+
+        light = Tex("h$\\nu$").center().shift(LEFT * 1)
         light_boundary = AnimatedBoundary(
             light, colors=[BLUE_A, BLUE_B, BLUE_C, BLUE_D], cycle_rate=2
         )
         self.wait()
         self.play(
-            FadeOutAndShiftDown(
+            FadeOutAndShift(
                 VGroup(
                     three_APA.chem[0][0:18], three_APA.chem[0][45:63], three_APA.name
                 )
@@ -477,35 +541,44 @@ class LuminolReactionStyle1(Scene):
         )
         self.add(light_boundary)
         self.wait(3)
-        self.play(
-            # FadeOutAndShift(VGroup(three_APA.chem[0][18:45], n2)),
-            # ApplyFunction(lambda m: m.scale(2.5).shift(LEFT * 4), light),
-            ApplyFunction(
-                lambda m: m.scale(0.6).shift(LEFT * 3),
-                VGroup(three_APA.chem[0][18:45], n2, light),
-            ),
-        )
+        # self.play(
+        #     # FadeOutAndShift(VGroup(three_APA.chem[0][18:45], n2)),
+        #     # ApplyFunction(lambda m: m.scale(2.5).shift(LEFT * 4), light),
+        #     ApplyFunction(
+        #         lambda m: m.scale(0.6).shift(LEFT * 3),
+        #         VGroup(three_APA.chem[0][18:45], n2, light),
+        #     ),
+        # )
 
         self.play(
-            Write(
-                DashedLine(
-                    start=config["frame_y_radius"] * DOWN,
-                    end=config["frame_y_radius"] * UP,
-                ).next_to(n2,buff=1).set_opacity(0.65),
-                run_time=0.5
-            ),
+            # Write(
+            #     DashedLine(
+            #         start=config["frame_y_radius"] * DOWN,
+            #         end=config["frame_y_radius"] * UP,
+            #     )
+            #     .next_to(n2, buff=1)
+            #     .set_opacity(0.65),
+            #     run_time=0.5,
+            # ),
             FadeInFrom(
-                ImageMobject(Path(".\References_and_Movies\luminol_light.jpg"))
-                .next_to(light, buff=2)
-                .scale(0.8)
+                ImageMobject(Path(".\\references\luminol_light.jpg")).to_edge(RIGHT)
+                # .next_to(light, buff=2)
+                # .scale(0.8)
             ),
         )
         self.wait(3)
+        ## Step 4 end
 
+        ## Debug Stuff
         # self.add(get_submobject_index_labels(three_APA.chem[0]))
         # self.add(get_submobject_index_labels(o2[0]))
 
         # self.add(get_submobject_index_labels(luminol.chem[0]))
+
+
+class EnergyDiagramIntermission(Scene):
+    def construct(self):
+        pass
 
 
 class AminoPhthalate(Scene):
