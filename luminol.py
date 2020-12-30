@@ -1,3 +1,4 @@
+from operator import add
 from chanim import *
 from pathlib import Path
 
@@ -7,7 +8,22 @@ O2 = "O(=[-2]O)"
 
 config["tex_template"] = TexTemplateLibrary.simple
 
+## Custom Mobjects ##
+class JablonskiDiagram(VGroup):
+    def __init__(self, label, num_vibs, **kwargs):
+        self.ground_state = Line(stroke_width=3)
+        self.vibs = VGroup(*[Line(stroke_width=0.5) for i in range(num_vibs)]).arrange(
+            UP
+        )
 
+        super().__init__(self.ground_state, self.vibs, **kwargs)
+
+        self.arrange(UP)
+        self.label = MathTex(label).next_to(self.ground_state, LEFT)
+        self.add(self.label)
+
+
+## Scenes ##
 class MechanismScene(Scene):
     def setup(self):
         self.divider = Line(
@@ -20,7 +36,15 @@ class MechanismScene(Scene):
         )
         self.play(ShowCreation(self.divider), Write(self.steps_header))
 
-    def add_steps(self, *steps,animation = Write,buff_factor=0.25,scale_factor=0.8,extra_methods:str=None, **bulleted_list_kwargs):
+    def add_steps(
+        self,
+        *steps,
+        animation=Write,
+        buff_factor=0.25,
+        scale_factor=0.8,
+        extra_methods: str = None,
+        **bulleted_list_kwargs,
+    ):
         self.steps = (
             BulletedList(*steps, **bulleted_list_kwargs)
             .next_to(self.steps_header, DOWN, buff=buff_factor)
@@ -286,7 +310,7 @@ class LuminolReactionMechanism(MechanismScene):
             "Rearrangement of charges\\\\(tautomerisation)",
             "Liberation of $\\text{N}_2$\\\\and formation of\\\\unstable 3-APA (3-APA*)",
             "Release of photon\\\\emitting blue light",
-            extra_methods="shift(UP*0.65)"
+            extra_methods="shift(UP*0.65)",
         )
 
         luminol = ChemWithName(LUMINOL, "Luminol").shift(LEFT * 3)
@@ -297,9 +321,7 @@ class LuminolReactionMechanism(MechanismScene):
         self.wait()
 
         ## Step 1 start
-        self.play(
-            self.steps.fade_all_but,0
-        )
+        self.play(self.steps.fade_all_but, 0)
         self.play(
             FadeInFrom(hydroxide_1, UP),
             FadeInFrom(hydroxide_2, DOWN),
@@ -338,9 +360,7 @@ class LuminolReactionMechanism(MechanismScene):
         self.wait(2)
 
         ## Step 2 start
-        self.play(
-            self.steps.fade_all_but,1
-        )
+        self.play(self.steps.fade_all_but, 1)
 
         self.play(
             Transform(
@@ -372,9 +392,7 @@ class LuminolReactionMechanism(MechanismScene):
         ## Step 2 end
 
         ## Step 3 start
-        self.play(
-            self.steps.fade_all_but,2
-        )
+        self.play(self.steps.fade_all_but, 2)
 
         o2 = ChemObject(O2).next_to(luminol.chem, buff=0.75)
 
@@ -471,7 +489,7 @@ class LuminolReactionMechanism(MechanismScene):
                 charge="*",
             ).scale(0.75),
             "3-Aminophthalamine* (3-APA*)",
-        ).shift(LEFT*2)
+        ).shift(LEFT * 2)
 
         three_APA.chem[0][45:].shift(RIGHT * 0.2)
         o2[0][0].clear_updaters()
@@ -520,9 +538,7 @@ class LuminolReactionMechanism(MechanismScene):
         ## Step 3 end
 
         ## Step 4 start
-        self.play(
-            self.steps.fade_all_but,3
-        )
+        self.play(self.steps.fade_all_but, 3)
 
         light = Tex("h$\\nu$").center().shift(LEFT * 1)
         light_boundary = AnimatedBoundary(
@@ -578,7 +594,407 @@ class LuminolReactionMechanism(MechanismScene):
 
 class EnergyDiagramIntermission(Scene):
     def construct(self):
-        pass
+        s0, s1, t1 = self.get_jablonski_diagrams()
+
+        VGroup(s0, s1).arrange(UP, buff=2).shift(LEFT * 2)
+
+        t1.next_to(s1, 2 * RIGHT + DOWN * 0.5, buff=1).shift(UP * 1.5)
+
+        # self.add(s0, s1, t1)
+
+        trend_arrow = (
+            VGroup(Tex("Energy"), Arrow(start=2 * DOWN, end=2 * UP))
+            .arrange()
+            .to_edge(buff=1)
+        )
+
+        self.play(
+            Write(
+                VGroup(
+                    trend_arrow[0],
+                    s0,
+                    s1,
+                    t1,
+                )
+            ),
+            FadeInFrom(trend_arrow[1]),
+        )
+        self.wait(2)
+
+        electron = MathTex("\\upharpoonleft").scale(2)
+
+        electron.move_to(t1.vibs[1]).set_color(RED)
+
+        self.play(Write(electron))
+
+        def update_rotate_and_shift(mob: Mobject):
+            # Rotate(mob)
+            mob.move_to(s1.vibs[1]).rotate(PI).flip()  ## ehh, good enough
+            return mob
+
+        self.play(
+            # Rotate(electron),
+            ApplyFunction(update_rotate_and_shift, electron)
+        )
+        self.play(
+            electron.move_to,
+            s1.vibs[1],
+        )
+
+        arrow_info_1 = (
+            VGroup(
+                Arrow(RIGHT, LEFT),
+                Text(
+                    "More stable as\nmolecule is less\nreactive due to\nall orbitals being filled"
+                ).scale(0.5),
+            )
+            .arrange()
+            .next_to(s1.vibs[1])
+        )
+
+        self.play(
+            FadeIn(arrow_info_1),
+            Wait(2),
+        )
+
+        photon = Circle(BLUE, fill_opacity=0.8).scale(0.5)
+        photon.add(Tex("h$\\nu$").add_updater(lambda m,dt: m.move_to(photon)))
+
+        photon.next_to(s1.ground_state, DOWN * 1.5)
+
+        def some_updater(m: Mobject,dt):
+            m.shift(dt*(3 * RIGHT + 1 * DOWN))
+            # FadeIn(m)
+            return m
+        photon.add_updater(some_updater)
+
+        write_and_shift_photon = AnimationGroup(
+            Write(photon),
+            ApplyMethod(photon.shift,3*RIGHT+2*DOWN)
+        )
+        # self.add(photon)
+        self.play(
+            electron.move_to,s0.vibs[1],
+            arrow_info_1.next_to,s0.vibs[1],dict(buff=0.5),
+            Show(photon),
+            # ApplyFunction(some_updater,photon)
+            # photon.shift,
+            # 3 * RIGHT + 2 * DOWN,
+            # FadeIn(photon),
+            # write_and_shift_photon
+        )
+        self.wait(2)
+
+    def get_jablonski_diagrams(self):
+        return [JablonskiDiagram(label, 5) for label in ["S_{0}", "S_{1}", "T_{1}"]]
+
+# class WriteAndMoveTo(Write,MoveToTarget):
+
+class Show(Write):
+    """
+    Show a Mobject without animation.
+    """
+    def get_bounds(self, alpha):
+        if alpha >0 :
+            alpha =1
+        return (0, alpha)
+
+class SynthesisVideoSuggestion(Scene):
+    def construct(self):
+        nilered_box, nurdrage_box = Rectangle(height=3, width=4), Rectangle(
+            height=3, width=4
+        )
+        nilered_text, nurdrage_text = Tex("NileRed"), Tex("NurdRage")
+
+        VGroup(
+            VGroup(nilered_box, nilered_text).arrange(DOWN, buff=0.5),
+            VGroup(nurdrage_box, nurdrage_text).arrange(DOWN, buff=0.5),
+        ).arrange(RIGHT, buff=1.5)
+
+        self.play(
+            Write(nurdrage_text),
+            Write(nilered_text),
+            ShowCreation(nurdrage_box),
+            ShowCreation(nilered_box),
+        )
+        self.wait(2)
+
+
+class LuminolInstagram(Scene):
+    def construct(self):
+        watermark = (
+            Tex("Follow @kilacoda for more")
+            .to_corner(LEFT + DOWN)
+            .set_opacity(0.5)
+            .scale(0.75)
+        )
+        self.add(watermark)
+
+        luminol = ChemWithName(LUMINOL, "Luminol")
+        hydroxide_1 = ChemObject("-OH").to_corner(UR, buff=1.5)
+        hydroxide_2 = ChemObject("-OH").to_corner(DR, buff=1.5)
+
+        self.play(luminol.creation_anim())
+        self.wait()
+
+        self.play(
+            FadeInFrom(hydroxide_1, UP),
+            FadeInFrom(hydroxide_2, DOWN),
+        )
+
+        self.play(
+            ApplyMethod(
+                hydroxide_1.next_to, luminol.chem[0][13], dict(buff=SMALL_BUFF)
+            ),
+            ApplyMethod(hydroxide_2.next_to, luminol.chem[0][9], dict(buff=SMALL_BUFF)),
+        )
+
+        water_group_1 = VGroup(luminol.chem[0][13], hydroxide_1)
+        water_group_2 = VGroup(luminol.chem[0][9], hydroxide_2)
+
+        self.play(
+            Transform(water_group_1, ChemObject("H_2 O").move_to(water_group_1)),
+            Transform(water_group_2, ChemObject("H_2 O").move_to(water_group_2)),
+        )
+
+        self.play(
+            Transform(
+                luminol.chem[0][14],
+                MathTex("\\scriptstyle-").move_to(luminol.chem[0][14]),
+            ),
+            Transform(
+                luminol.chem[0][10],
+                MathTex("\\scriptstyle-").move_to(luminol.chem[0][10]).shift(UP * 0.5),
+            ),
+            FadeOutAndShift(luminol.name),
+            FadeOutAndShift(water_group_1, UP),
+            FadeOutAndShift(water_group_2, DOWN),
+        )
+
+        self.play(
+            Transform(
+                luminol.chem[0][14],
+                luminol.chem[0][15].copy().scale(0.8).shift(DOWN * 0.1),
+            ),
+            Transform(
+                luminol.chem[0][10],
+                luminol.chem[0][8].copy().scale(0.8).shift(UP * 0.1),
+            ),
+            Transform(
+                luminol.chem[0][18],
+                MathTex("\\scriptstyle-").next_to(
+                    luminol.chem[0][16], UR + UP, buff=0.1
+                ),
+            ),
+            Transform(
+                luminol.chem[0][5],
+                MathTex("\\scriptstyle-").next_to(
+                    luminol.chem[0][4], UR + UP, buff=0.1
+                ),
+            ),
+            luminol.chem[0][17].shift,
+            0.05 * RIGHT,
+            luminol.chem[0][6].shift,
+            0.05 * RIGHT,
+            # luminol.chem[0][14].next_to,luminol.chem[0][15],DL,dict(buff=0.15)
+        )
+
+        o2 = ChemObject(O2).to_edge(RIGHT, buff=2)
+
+        self.play(Write(o2))
+
+        self.play(
+            MoveAlongPath(
+                o2[0][2],
+                ArcBetweenPoints(
+                    o2[0][2].get_center(), o2[0][2].get_center() + UP + 0.05 * LEFT
+                ),
+            ),
+            o2[0][3].shift,
+            RIGHT * 0.05,
+        )
+
+        self.play(
+            o2.scale,
+            0.75,
+            o2.next_to,
+            luminol.chem[0][16],
+            DOWN,
+            {"buff": 0.8},
+            Transform(
+                luminol.chem[0][14],
+                luminol.chem[0][12].copy().shift(0.1 * LEFT),
+            ),
+            Transform(
+                luminol.chem[0][10],
+                ## NOTE: This is totally not a weird workaround...
+                o2[0][3].copy().next_to(luminol.chem[0][4], UP, buff=0.85),
+            ),
+        )
+
+        self.play(
+            Transform(
+                luminol.chem[0][8],
+                luminol.chem[0][12].copy().shift(0.1 * RIGHT),
+            ),
+            Transform(
+                o2[0][3],
+                MathTex("\\scriptstyle-").move_to(o2[0][1]).shift(UR * 0.25),
+            ),
+            Transform(
+                luminol.chem[0][15],
+                MathTex("\\scriptstyle-").move_to(o2[0][0]).shift(UR * 0.25),
+            ),
+            Transform(
+                luminol.chem[0][5], luminol.chem[0][6].copy().shift(0.05 * RIGHT)
+            ),
+            Transform(
+                luminol.chem[0][18], luminol.chem[0][17].copy().shift(0.05 * RIGHT)
+            ),
+            luminol.chem[0][6].shift,
+            0.05 * LEFT,
+            luminol.chem[0][17].shift,
+            0.05 * LEFT,
+        )
+
+        n2 = VGroup(
+            luminol.chem[0][7],
+            luminol.chem[0][8],
+            luminol.chem[0][11],
+            luminol.chem[0][12],
+            luminol.chem[0][14],
+        )
+
+        ## Updaters because rotating multiple things simultaneously in manim can be a PITA at times.
+        o2[0][0].add_updater(lambda m: m.next_to(o2[0][2].get_end(), DOWN, buff=0.1))
+        luminol.chem[0][15].add_updater(lambda m: m.move_to(o2[0][0]).shift(UR * 0.25))
+
+        o2[0][1].add_updater(
+            lambda m: m.next_to(o2[0][0], DOWN, buff=0.3)
+        )  ## because when you can't update up, you gotta look down.
+        o2[0][3].add_updater(lambda m: m.move_to(o2[0][1]).shift(UR * 0.25))
+        self.play(
+            n2.shift,
+            3 * RIGHT,
+            # {"run_time":2},
+            Transform(
+                o2[0][2], luminol.chem[0][0].copy().shift(RIGHT * 2.55 + UP * 1.5)
+            ),
+            Transform(
+                luminol.chem[0][10],
+                luminol.chem[0][28].copy().shift(RIGHT * 2.55 + DOWN * 1.5),
+            ),
+            run_time=2,
+        )
+
+        three_APA = ChemWithName(
+            ComplexChemIon(
+                "*6(-=(-(=[-2]O)-[:36]\\charge{45:2pt=$\\scriptstyle-$}{O})-(-(=[2]O)-[:-36]\\charge{45:2pt=$\\scriptstyle-$}{O})=(-NH_2)-=)",
+                charge="*",
+            ).scale(0.75),
+            "3-Aminophthalamine* (3-APA*)",
+        )
+
+        three_APA.chem[0][45:].shift(RIGHT * 0.2)
+        o2[0][0].clear_updaters()
+        o2[0][1].clear_updaters()
+        o2[0][3].clear_updaters()
+        luminol.chem[0][15].clear_updaters()
+
+        self.play(
+            ReplacementTransform(
+                VGroup(
+                    ## Yeah, yeah I know I should be using a slice here and not individual elements like a caveman.
+                    ## Except the previous times I've tried to be lazy and do that the results were less than stellar.
+                    luminol.chem[0][0],
+                    luminol.chem[0][1],
+                    luminol.chem[0][2],
+                    luminol.chem[0][3],
+                    luminol.chem[0][4],
+                    luminol.chem[0][5],
+                    luminol.chem[0][6],
+                    luminol.chem[0][10],
+                    luminol.chem[0][15],
+                    luminol.chem[0][16],
+                    luminol.chem[0][17],
+                    luminol.chem[0][18],
+                    luminol.chem[0][19],
+                    luminol.chem[0][20],
+                    luminol.chem[0][21],
+                    luminol.chem[0][22],
+                    luminol.chem[0][23],
+                    luminol.chem[0][24],
+                    luminol.chem[0][25],
+                    luminol.chem[0][26],
+                    luminol.chem[0][27],
+                    luminol.chem[0][28],
+                    luminol.chem[0][29],
+                    luminol.chem[0][30],
+                    o2[0][0],
+                    o2[0][1],
+                    o2[0][2],
+                    o2[0][3],
+                ),
+                three_APA.chem,
+            ),
+            FadeInFrom(three_APA.name),
+        )
+        light = Tex("h$\\nu$").center().shift(RIGHT * 1.5)
+        light_boundary = AnimatedBoundary(
+            light, colors=[BLUE_A, BLUE_B, BLUE_C, BLUE_D], cycle_rate=2
+        )
+        self.wait()
+        self.play(
+            FadeOutAndShift(
+                VGroup(
+                    three_APA.chem[0][0:18], three_APA.chem[0][45:63], three_APA.name
+                )
+            ),
+            three_APA.chem[0][18:45].shift,
+            LEFT * 2.5,
+            ReplacementTransform(three_APA.chem[0][63], light),
+        )
+        self.add(light_boundary)
+        self.wait(3)
+        self.play(
+            # FadeOutAndShift(VGroup(three_APA.chem[0][18:45], n2)),
+            # ApplyFunction(lambda m: m.scale(2.5).shift(LEFT * 4), light),
+            ApplyFunction(
+                lambda m: m.scale(0.6).shift(LEFT * 3),
+                VGroup(three_APA.chem[0][18:45], n2, light),
+            ),
+        )
+
+        self.play(
+            Write(
+                DashedLine(
+                    start=config["frame_y_radius"] * DOWN,
+                    end=config["frame_y_radius"] * UP,
+                )
+                .next_to(n2, buff=1)
+                .set_opacity(0.65),
+                run_time=0.5,
+            ),
+            FadeInFrom(
+                ImageMobject(Path(".\\references\luminol_light.jpg"))
+                .next_to(light, buff=2)
+                .scale(0.8)
+            ),
+        )
+        self.wait(3)
+
+        self.clear()
+
+        self.add(
+            Text(
+                "Made with chanim\nhttps://github.com/raghavg123/chanim\n\nSource code at https://github.com/kilacoda/videos"
+            ).scale(0.75)
+        )
+        self.wait(3)
+        # self.add(get_submobject_index_labels(three_APA.chem[0]))
+        # self.add(get_submobject_index_labels(o2[0]))
+
+        # self.add(get_submobject_index_labels(luminol.chem[0]))
 
 
 class AminoPhthalate(Scene):
@@ -588,3 +1004,13 @@ class AminoPhthalate(Scene):
         )
 
         self.add(three_APA, get_submobject_index_labels(three_APA[0]))
+
+
+class ImNotAChemistYaKnow(Scene):
+    def construct(self):
+        self.wait(2)
+        self.add(Text("¯\_(ツ)_/¯"))
+
+        self.wait()
+        self.clear()
+        self.wait(2)
