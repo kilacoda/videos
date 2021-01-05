@@ -1,4 +1,3 @@
-from operator import add
 from chanim import *
 from pathlib import Path
 
@@ -21,6 +20,38 @@ class JablonskiDiagram(VGroup):
         self.arrange(UP)
         self.label = MathTex(label).next_to(self.ground_state, LEFT)
         self.add(self.label)
+
+
+class WigglyArrow(TipableVMobject):
+    def __init__(
+        self,
+        num_wiggles=4,
+        amplitude=0.5,
+        wiggle_radius=0.5,
+        final_line_length=0.5,
+        **kwargs,
+    ):
+        self.num_wiggles = num_wiggles
+        self.amplitude = amplitude
+        self.wiggle_radius = wiggle_radius
+        self.final_line_length = final_line_length
+
+        super().__init__(**kwargs)
+        self.add_tip()
+
+    def generate_points(self):
+        new_points = [
+            ((-1) ** (x // 2)) * self.amplitude * UP + self.wiggle_radius * x * RIGHT
+            if (x % 2 != 0)
+            else ORIGIN
+            if x == 0
+            else self.wiggle_radius * x * RIGHT
+            for x in range(2 * self.num_wiggles + 1)
+        ]
+        self.set_points_smoothly(new_points)
+        final_point = new_points[-1] + self.final_line_length * RIGHT
+        self.add_line_to(final_point)
+        self.center()
 
 
 ## Scenes ##
@@ -142,6 +173,76 @@ class LuminolIntro(Scene):
             FadeOutAndShift(luceferin_group),
             FadeOutAndShift(glow_stick_group),
         )
+
+
+##TODO: Get this piece of crap working properly
+class MoleculeProfile(VGroup):
+    def __init__(
+        self, name: str, iupac_name: str, uses: str, first_synthesis: int, **kwargs
+    ):
+        self.name = name
+        self.iupac_name = iupac_name
+        self.uses = uses
+        self.first_synthesis = first_synthesis
+
+        self.title = Text("Molecule Profile").add_background_rectangle(
+            opacity=1
+        )  # heh heh, they'll never know...
+        dummy_underline = Underline(self.title)
+
+        self.divider = Line(
+            # dummy_underline.get_center(),
+            # dummy_underline.get_center()
+            # + (dummy_underline.get_y() + config["frame_y_radius"]) * DOWN,
+            config["frame_y_radius"]* UP,
+            config["frame_y_radius"]* DOWN,
+        )
+
+        self.fields = (
+            VGroup(
+                Tex("Name"),
+                Tex("IUPAC Name"),
+                Tex("Used in"),
+                Tex("First synthesis"),
+            )
+            .arrange(DOWN, buff=1)
+            .align_to(UP)
+        )
+
+        self.values = (
+            VGroup(
+                Tex(self.name),
+                Tex(self.iupac_name),
+                Tex(self.uses),
+                Tex(str(self.first_synthesis)),
+            )
+            .arrange(DOWN, buff=1)
+            .align_on_border(UP)
+        )
+
+        bounding_lines = VGroup(Line())
+        real_underline = Line(2 * LEFT, 2 * RIGHT)
+        super().__init__(
+            self.title,
+            real_underline,
+            VGroup(
+                self.divider, VGroup(self.fields, self.values).arrange(buff=0.75)
+            ).center(),
+            **kwargs,
+        )
+
+        self.arrange(DOWN, buff=0)
+
+
+class MoleculeProfileTest(Scene):
+    def construct(self):
+        profile = MoleculeProfile(
+            "Luminol", "3-aminophthalazide", "Forensics, biology", 1938
+        )
+
+        self.play(ShowCreation(profile))
+
+        self.wait()
 
 
 class Synthesis(Scene):
@@ -473,7 +574,7 @@ class LuminolReactionMechanism(MechanismScene):
         o2[0][3].add_updater(lambda m: m.move_to(o2[0][1]).shift(UR * 0.25))
         self.play(
             n2.shift,
-            3 * RIGHT,
+            2 * RIGHT,
             Transform(
                 o2[0][2], luminol.chem[0][0].copy().shift(RIGHT * 2.55 + UP * 1.5)
             ),
@@ -540,7 +641,7 @@ class LuminolReactionMechanism(MechanismScene):
         ## Step 4 start
         self.play(self.steps.fade_all_but, 3)
 
-        light = Tex("h$\\nu$").center().shift(LEFT * 1)
+        light = Tex("h$\\nu$").center().shift(LEFT * 1.5)
         light_boundary = AnimatedBoundary(
             light, colors=[BLUE_A, BLUE_B, BLUE_C, BLUE_D], cycle_rate=2
         )
@@ -577,7 +678,9 @@ class LuminolReactionMechanism(MechanismScene):
             #     run_time=0.5,
             # ),
             FadeInFrom(
-                ImageMobject(Path(".\\references\luminol_light.jpg")).to_edge(RIGHT)
+                ImageMobject(Path(".\\references\luminol_light.jpg"))
+                .to_edge(RIGHT)
+                .shift(RIGHT)
                 # .next_to(light, buff=2)
                 # .scale(0.8)
             ),
@@ -594,7 +697,13 @@ class LuminolReactionMechanism(MechanismScene):
 
 class EnergyDiagramIntermission(Scene):
     def construct(self):
+        title = Title("Jablonski Diagram", include_underline=True).shift(UP * 0.2)
+
+        self.play(Write(title))
+
         s0, s1, t1 = self.get_jablonski_diagrams()
+
+        t1.label.next_to(t1.ground_state, RIGHT)
 
         VGroup(s0, s1).arrange(UP, buff=2).shift(LEFT * 2)
 
@@ -619,7 +728,28 @@ class EnergyDiagramIntermission(Scene):
             ),
             FadeInFrom(trend_arrow[1]),
         )
-        self.wait(2)
+
+        vibrational_states_brace = BraceText(
+            s0.vibs, "Vibrational\\\\states", brace_direction=RIGHT
+        )
+        self.play(vibrational_states_brace.creation_anim())
+        self.play(FadeOut(vibrational_states_brace))
+
+        explanations = VGroup(
+            Text("(More excited\nsinglet state)")
+            .next_to(s1.ground_state, DOWN, buff=0)
+            .scale(0.5),
+            Text("(Unstable\ntriplet state)")
+            .next_to(t1.ground_state, DOWN, buff=0)
+            .scale(0.5),
+            Text("(Less excited\nsinglet state)")
+            .next_to(s0.ground_state, DOWN)
+            .scale(0.5),
+        )
+
+        self.play(ShowCreation(explanations))
+        self.wait()
+        self.play(Uncreate(explanations))
 
         electron = MathTex("\\upharpoonleft").scale(2)
 
@@ -627,10 +757,28 @@ class EnergyDiagramIntermission(Scene):
 
         self.play(Write(electron))
 
+        self.wait()
+
+        intersystem_crossing_arrow = WigglyArrow(10, 0.25, 0.15).put_start_and_end_on(
+            t1.ground_state.get_start(), s1.ground_state.get_end()
+        )
+
+        intersystem_crossing_label = BraceText(
+            intersystem_crossing_arrow, "Intersystem Crossing"
+        )
+
         def update_rotate_and_shift(mob: Mobject):
             # Rotate(mob)
             mob.move_to(s1.vibs[1]).rotate(PI).flip()  ## ehh, good enough
             return mob
+
+        self.play(
+            ShowCreation(intersystem_crossing_arrow),
+            intersystem_crossing_label.creation_anim(),
+        )
+
+        self.wait()
+        self.play(FadeOutAndShift(intersystem_crossing_label))
 
         self.play(
             # Rotate(electron),
@@ -658,24 +806,26 @@ class EnergyDiagramIntermission(Scene):
         )
 
         photon = Circle(BLUE, fill_opacity=0.8).scale(0.5)
-        photon.add(Tex("h$\\nu$").add_updater(lambda m,dt: m.move_to(photon)))
+        photon.add(Tex("h$\\nu$").add_updater(lambda m, dt: m.move_to(photon)))
 
         photon.next_to(s1.ground_state, DOWN * 1.5)
 
-        def some_updater(m: Mobject,dt):
-            m.shift(dt*(3 * RIGHT + 1 * DOWN))
+        def some_updater(m: Mobject, dt):
+            m.shift(dt * (3 * RIGHT + 1 * DOWN))
             # FadeIn(m)
             return m
+
         photon.add_updater(some_updater)
 
         write_and_shift_photon = AnimationGroup(
-            Write(photon),
-            ApplyMethod(photon.shift,3*RIGHT+2*DOWN)
+            Write(photon), ApplyMethod(photon.shift, 3 * RIGHT + 2 * DOWN)
         )
         # self.add(photon)
         self.play(
-            electron.move_to,s0.vibs[1],
-            arrow_info_1.next_to,s0.vibs[1],dict(buff=0.5),
+            electron.move_to,
+            s0.vibs[1],
+            # arrow_info_1.next_to,s0.vibs[1],dict(buff=0.5),
+            FadeOut(arrow_info_1),
             Show(photon),
             # ApplyFunction(some_updater,photon)
             # photon.shift,
@@ -688,16 +838,20 @@ class EnergyDiagramIntermission(Scene):
     def get_jablonski_diagrams(self):
         return [JablonskiDiagram(label, 5) for label in ["S_{0}", "S_{1}", "T_{1}"]]
 
+
 # class WriteAndMoveTo(Write,MoveToTarget):
+
 
 class Show(Write):
     """
     Show a Mobject without animation.
     """
+
     def get_bounds(self, alpha):
-        if alpha >0 :
-            alpha =1
+        if alpha > 0:
+            alpha = 1
         return (0, alpha)
+
 
 class SynthesisVideoSuggestion(Scene):
     def construct(self):
