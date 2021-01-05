@@ -118,8 +118,8 @@ class LuminolIntro(Scene):
         brace1 = BraceText(word[0:5], "``chemical''", brace_direction=UP)
         brace2 = BraceText(word[5:], "``light''", brace_direction=DOWN)
 
-        self.play(brace2.creation_anim(), Wait(), word[5:].set_color, BLUE)
-        self.play(brace1.creation_anim(), Wait(), word[0:5].set_color, RED)
+        self.play(brace2.creation_anim(), Wait(), word[5:].animate.set_color(BLUE))
+        self.play(brace1.creation_anim(), Wait(), word[0:5].animate.set_color(RED))
         self.wait(2)
 
         self.clear()
@@ -133,7 +133,9 @@ class LuminolIntro(Scene):
         self.play(luminol.creation_anim())
         self.wait(2)
 
-        self.play(FadeOutAndShift(luminol.name), luminol.chem.shift, DOWN + 4 * LEFT)
+        self.play(
+            FadeOutAndShift(luminol.name), luminol.chem.animate.shift(DOWN + 4 * LEFT)
+        )
 
         luminol_para = Paragraph(
             "Used in forensics", "to locate blood traces", "at crime scenes"
@@ -194,8 +196,8 @@ class MoleculeProfile(VGroup):
             # dummy_underline.get_center(),
             # dummy_underline.get_center()
             # + (dummy_underline.get_y() + config["frame_y_radius"]) * DOWN,
-            config["frame_y_radius"]* UP,
-            config["frame_y_radius"]* DOWN,
+            config["frame_y_radius"] * UP,
+            config["frame_y_radius"] * DOWN,
         )
 
         self.fields = (
@@ -270,8 +272,7 @@ class Synthesis(Scene):
         self.play(Write(self.steps))
 
         self.play(
-            self.steps.fade_all_but,
-            0,
+            self.steps.animate.fade_all_but(0),
         )
         self.wait()
 
@@ -290,8 +291,7 @@ class Synthesis(Scene):
         )
 
         self.play(
-            npa.shift,
-            LEFT * 2,
+            npa.animate.shift(LEFT * 2),
             Write(hydrazine),
         )
 
@@ -299,7 +299,7 @@ class Synthesis(Scene):
             Rotate(hydrazine, angle=TAU / 4, run_time=0.5),
         )
 
-        self.play(hydrazine.shift, LEFT)
+        self.play(hydrazine.animate.shift(LEFT))
         self.play(
             Rotate(hydrazine[0][0], -PI / 2),
             Rotate(hydrazine[0][1], -PI / 2),
@@ -343,12 +343,12 @@ class Synthesis(Scene):
             hydrazine[0][10],
         )
 
-        self.play(hydrazine.shift, LEFT * 1.5)
+        self.play(hydrazine.animate.shift(LEFT * 1.5))
 
         self.wait()
 
         sodium_thiocyanide = ChemObject("Na_2 S_2 O_4")
-        self.play(self.steps.fade_all_but, 1, Write(sodium_thiocyanide))
+        self.play(self.steps.animate.fade_all_but(1), Write(sodium_thiocyanide))
 
         footnote = (
             Tex(
@@ -359,7 +359,7 @@ class Synthesis(Scene):
             .to_corner()
         )
 
-        self.play(npa[0][23].set_color, YELLOW)
+        self.play(npa[0][23].animate.set_color(YELLOW))
         hydrogen = ChemObject("H").set_color(RED).move_to(npa[0][23])
 
         self.wait(2)
@@ -370,8 +370,7 @@ class Synthesis(Scene):
         self.play(
             FadeOutAndShift(sodium_thiocyanide),
             FadeOutAndShift(footnote),
-            hydrogen.set_color,
-            WHITE,
+            hydrogen.animate.set_color(WHITE),
         )
         luminol_created = VGroup(
             npa[0][0:7],
@@ -384,8 +383,7 @@ class Synthesis(Scene):
             hydrazine,
         )
         self.play(
-            luminol_created.shift,
-            RIGHT * 2,
+            luminol_created.animate.shift(RIGHT * 2),
         )
 
         luminol_label = Tex("Luminol").to_edge(DOWN).shift(2.5 * LEFT + UP * 0.5)
@@ -422,7 +420,7 @@ class LuminolReactionMechanism(MechanismScene):
         self.wait()
 
         ## Step 1 start
-        self.play(self.steps.fade_all_but, 0)
+        self.play(self.steps.animate.fade_all_but(0))
         self.play(
             FadeInFrom(hydroxide_1, UP),
             FadeInFrom(hydroxide_2, DOWN),
@@ -461,7 +459,7 @@ class LuminolReactionMechanism(MechanismScene):
         self.wait(2)
 
         ## Step 2 start
-        self.play(self.steps.fade_all_but, 1)
+        self.play(self.steps.animate.fade_all_but(1))
 
         self.play(
             Transform(
@@ -484,16 +482,14 @@ class LuminolReactionMechanism(MechanismScene):
                     luminol.chem[0][4], UR + UP, buff=0.1
                 ),
             ),
-            luminol.chem[0][17].shift,
-            0.05 * RIGHT,
-            luminol.chem[0][6].shift,
-            0.05 * RIGHT,
+            luminol.chem[0][17].animate.shift(0.05 * RIGHT),
+            luminol.chem[0][6].animate.shift(0.05 * RIGHT),
             # luminol.chem[0][14].next_to,luminol.chem[0][15],DL,dict(buff=0.15)
         )
         ## Step 2 end
 
         ## Step 3 start
-        self.play(self.steps.fade_all_but, 2)
+        self.play(self.steps.animate.fade_all_but(2))
 
         o2 = ChemObject(O2).next_to(luminol.chem, buff=0.75)
 
@@ -506,17 +502,12 @@ class LuminolReactionMechanism(MechanismScene):
                     o2[0][2].get_center(), o2[0][2].get_center() + UP + 0.05 * LEFT
                 ),
             ),
-            o2[0][3].shift,
-            RIGHT * 0.05,
+            o2[0][3].animate.shift(RIGHT * 0.05),
         )
 
         self.play(
-            o2.scale,
-            0.75,
-            o2.next_to,
-            luminol.chem[0][16],
-            DOWN,
-            {"buff": 0.8},
+            o2.animate.scale(0.75),
+            o2.animate.next_to(luminol.chem[0][16], DOWN, buff=0.8),
             Transform(
                 luminol.chem[0][14],
                 luminol.chem[0][12].copy().shift(0.1 * LEFT),
@@ -549,10 +540,8 @@ class LuminolReactionMechanism(MechanismScene):
             Transform(
                 luminol.chem[0][18], luminol.chem[0][17].copy().shift(0.05 * RIGHT)
             ),
-            luminol.chem[0][6].shift,
-            0.05 * LEFT,
-            luminol.chem[0][17].shift,
-            0.05 * LEFT,
+            luminol.chem[0][6].animate.shift(0.05 * LEFT),
+            luminol.chem[0][17].animate.shift(0.05 * LEFT),
         )
 
         self.wait(2.5)
@@ -573,8 +562,7 @@ class LuminolReactionMechanism(MechanismScene):
         )  ## because when you can't update up, you gotta look down.
         o2[0][3].add_updater(lambda m: m.move_to(o2[0][1]).shift(UR * 0.25))
         self.play(
-            n2.shift,
-            2 * RIGHT,
+            n2.animate.shift(2 * RIGHT),
             Transform(
                 o2[0][2], luminol.chem[0][0].copy().shift(RIGHT * 2.55 + UP * 1.5)
             ),
@@ -639,7 +627,7 @@ class LuminolReactionMechanism(MechanismScene):
         ## Step 3 end
 
         ## Step 4 start
-        self.play(self.steps.fade_all_but, 3)
+        self.play(self.steps.animate.fade_all_but(3))
 
         light = Tex("h$\\nu$").center().shift(LEFT * 1.5)
         light_boundary = AnimatedBoundary(
@@ -652,8 +640,7 @@ class LuminolReactionMechanism(MechanismScene):
                     three_APA.chem[0][0:18], three_APA.chem[0][45:63], three_APA.name
                 )
             ),
-            three_APA.chem[0][18:45].shift,
-            LEFT * 2.5,
+            three_APA.chem[0][18:45].animate.shift(LEFT * 2.5),
             ReplacementTransform(three_APA.chem[0][63], light),
         )
         self.add(light_boundary)
@@ -782,11 +769,13 @@ class EnergyDiagramIntermission(Scene):
 
         self.play(
             # Rotate(electron),
-            ApplyFunction(update_rotate_and_shift, electron)
+            # ApplyFunction(update_rotate_and_shift, electron)
+            electron.animate.move_to(s1.vibs[1])
+            .rotate(PI)
+            .flip()
         )
         self.play(
-            electron.move_to,
-            s1.vibs[1],
+            electron.animate.move_to(s1.vibs[1]),
         )
 
         arrow_info_1 = (
@@ -822,8 +811,7 @@ class EnergyDiagramIntermission(Scene):
         )
         # self.add(photon)
         self.play(
-            electron.move_to,
-            s0.vibs[1],
+            electron.animate.move_to(s0.vibs[1]),
             # arrow_info_1.next_to,s0.vibs[1],dict(buff=0.5),
             FadeOut(arrow_info_1),
             Show(photon),
@@ -837,9 +825,6 @@ class EnergyDiagramIntermission(Scene):
 
     def get_jablonski_diagrams(self):
         return [JablonskiDiagram(label, 5) for label in ["S_{0}", "S_{1}", "T_{1}"]]
-
-
-# class WriteAndMoveTo(Write,MoveToTarget):
 
 
 class Show(Write):
@@ -946,10 +931,8 @@ class LuminolInstagram(Scene):
                     luminol.chem[0][4], UR + UP, buff=0.1
                 ),
             ),
-            luminol.chem[0][17].shift,
-            0.05 * RIGHT,
-            luminol.chem[0][6].shift,
-            0.05 * RIGHT,
+            luminol.chem[0][17].animate.shift(0.05 * RIGHT),
+            luminol.chem[0][6].animate.shift(0.05 * RIGHT),
             # luminol.chem[0][14].next_to,luminol.chem[0][15],DL,dict(buff=0.15)
         )
 
@@ -964,17 +947,11 @@ class LuminolInstagram(Scene):
                     o2[0][2].get_center(), o2[0][2].get_center() + UP + 0.05 * LEFT
                 ),
             ),
-            o2[0][3].shift,
-            RIGHT * 0.05,
+            o2[0][3].animate.shift(RIGHT * 0.05),
         )
 
         self.play(
-            o2.scale,
-            0.75,
-            o2.next_to,
-            luminol.chem[0][16],
-            DOWN,
-            {"buff": 0.8},
+            o2.animate.scale(0.75).next_to(luminol.chem[0][16], DOWN, buff=0.8),
             Transform(
                 luminol.chem[0][14],
                 luminol.chem[0][12].copy().shift(0.1 * LEFT),
@@ -1005,10 +982,8 @@ class LuminolInstagram(Scene):
             Transform(
                 luminol.chem[0][18], luminol.chem[0][17].copy().shift(0.05 * RIGHT)
             ),
-            luminol.chem[0][6].shift,
-            0.05 * LEFT,
-            luminol.chem[0][17].shift,
-            0.05 * LEFT,
+            luminol.chem[0][6].animate.shift(0.05 * LEFT),
+            luminol.chem[0][17].animate.shift(0.05 * LEFT),
         )
 
         n2 = VGroup(
@@ -1028,8 +1003,7 @@ class LuminolInstagram(Scene):
         )  ## because when you can't update up, you gotta look down.
         o2[0][3].add_updater(lambda m: m.move_to(o2[0][1]).shift(UR * 0.25))
         self.play(
-            n2.shift,
-            3 * RIGHT,
+            n2.animate.shift(3 * RIGHT),
             # {"run_time":2},
             Transform(
                 o2[0][2], luminol.chem[0][0].copy().shift(RIGHT * 2.55 + UP * 1.5)
@@ -1104,8 +1078,7 @@ class LuminolInstagram(Scene):
                     three_APA.chem[0][0:18], three_APA.chem[0][45:63], three_APA.name
                 )
             ),
-            three_APA.chem[0][18:45].shift,
-            LEFT * 2.5,
+            three_APA.chem[0][18:45].animate.shift(LEFT * 2.5),
             ReplacementTransform(three_APA.chem[0][63], light),
         )
         self.add(light_boundary)
