@@ -4,6 +4,7 @@ from pathlib import Path
 LUMINOL = "*6(-=*6(-(=O)-N(-H)-N(-H)-(=O)--)-=(-NH_2)-=)"
 DIANION_1 = "*6(-=*6(-(=O)-\\charge{45:2pt=$\\scriptstyle-$}{N}-\\charge{45:2pt=$\\scriptstyle-$}{N}-(=O)--)-=(-NH_2)-=)"
 O2 = "O(=[-2]O)"
+endoperoxide = None
 
 config["tex_template"] = TexTemplateLibrary.simple
 
@@ -74,6 +75,7 @@ class MechanismScene(Scene):
         buff_factor=0.25,
         scale_factor=0.8,
         extra_methods: str = None,
+        animate=True,
         **bulleted_list_kwargs,
     ):
         self.steps = (
@@ -86,7 +88,10 @@ class MechanismScene(Scene):
         ## This could be pretty handy.
         exec(f"self.steps.{extra_methods}")
 
-        self.play(animation(self.steps))
+        if animate:
+            self.play(animation(self.steps))
+        else:
+            self.add(self.steps)
 
 
 class ChemObjectTest(Scene):
@@ -137,11 +142,14 @@ class LuminolIntro(Scene):
             FadeOutAndShift(luminol.name), luminol.chem.animate.shift(DOWN + 4 * LEFT)
         )
 
-        luminol_para = Paragraph(
-            "Used in forensics", "to locate blood traces", "at crime scenes"
-        ).to_edge(RIGHT)
+        # luminol_para = Paragraph(
+        #     "Used in forensics", "to locate blood traces", "at crime scenes"
+        # ).to_edge(RIGHT)
 
-        self.play(Write(luminol_para))
+        luminol_profile = MoleculeProfile(
+            "Luminol", "3-aminophthalazide", "Forensics, Biology", 1902
+        )
+        self.play(luminol_profile.creation_anim())
         self.wait()
 
     def show_examples(self):
@@ -177,7 +185,7 @@ class LuminolIntro(Scene):
         )
 
 
-##TODO: Get this piece of crap working properly
+## NOTE: Write doesn't seem to work with this. Use creation_anim instead.
 class MoleculeProfile(VGroup):
     def __init__(
         self, name: str, iupac_name: str, uses: str, first_synthesis: int, **kwargs
@@ -196,44 +204,96 @@ class MoleculeProfile(VGroup):
             # dummy_underline.get_center(),
             # dummy_underline.get_center()
             # + (dummy_underline.get_y() + config["frame_y_radius"]) * DOWN,
-            config["frame_y_radius"] * UP,
-            config["frame_y_radius"] * DOWN,
+            config["frame_y_radius"] * UP * 0.6,
+            config["frame_y_radius"] * DOWN * 0.6,
         )
 
-        self.fields = (
-            VGroup(
-                Tex("Name"),
-                Tex("IUPAC Name"),
-                Tex("Used in"),
-                Tex("First synthesis"),
-            )
-            .arrange(DOWN, buff=1)
-            .align_to(UP)
+        # self.fields = (
+        #     VGroup(
+        #         Tex("Name"),
+        #         Tex("IUPAC Name"),
+        #         Tex("Used in"),
+        #         Tex("First synthesis"),
+        #     )
+        #     .arrange(DOWN, buff=1)
+        #     .align_to(UP)
+        # )
+
+        self.fields = Paragraph(
+            "Name\n\n",
+            # "IUPAC Name\n",
+            "Used in\n",
+            "First synthesis\n",
+            line_spacing=2,
+            size=0.65,
+            font="Syne",
         )
 
-        self.values = (
-            VGroup(
-                Tex(self.name),
-                Tex(self.iupac_name),
-                Tex(self.uses),
-                Tex(str(self.first_synthesis)),
-            )
-            .arrange(DOWN, buff=1)
-            .align_on_border(UP)
+        self.values = Paragraph(
+            self.name,
+            f"({self.iupac_name})" + "\n",
+            self.uses + "\n",
+            str(self.first_synthesis) + "\n",
+            # line_spacing = 100, yup this is broken ig
+            size=0.65,
         )
+        # self.values = (
+        #     VGroup(
+        #         Tex(self.name),
+        #         Tex(self.iupac_name),
+        #         Tex(self.uses),
+        #         Tex(str(self.first_synthesis)),
+        #     )
+        #     .arrange(DOWN, buff=1)
+        #     .align_on_border(UP)
+        # )
 
         bounding_lines = VGroup(Line())
         real_underline = Line(2 * LEFT, 2 * RIGHT)
+        content = (
+            VGroup(
+                self.fields,
+                self.divider,
+                self.values
+                # VGroup(self.fields, self.values).arrange(buff=1)
+            )
+            .arrange()
+            .center()
+        )
         super().__init__(
             self.title,
-            real_underline,
-            VGroup(
-                self.divider, VGroup(self.fields, self.values).arrange(buff=0.75)
-            ).center(),
+            # real_underline,
+            content,
             **kwargs,
         )
+        # self.divider.shift(DOWN)
 
-        self.arrange(DOWN, buff=0)
+        self.arrange(DOWN, buff=0.25)
+
+        content.shift(RIGHT)
+        self.to_edge(RIGHT)
+        self.title.shift(RIGHT / 2)
+
+        self.add_underline()
+
+    def add_underline(self):
+        self.underline = underline = Underline(self.title, buff=MED_SMALL_BUFF)
+        self.add(underline)
+
+    def creation_anim(self):
+        title_anim = FadeIn(self.title)
+        field_anims = [FadeInFrom(line) for line in self.fields.chars]
+        value_anims = [FadeInFrom(line) for line in self.values.chars]
+        divider_anim = FadeIn(self.divider)
+        underline_anim = DrawBorderThenFill(self.underline)
+        console.print("Hi! From line 281")
+        return AnimationGroup(
+            title_anim,
+            divider_anim,
+            underline_anim,
+            *field_anims,
+            *value_anims,
+        )
 
 
 class MoleculeProfileTest(Scene):
@@ -242,7 +302,7 @@ class MoleculeProfileTest(Scene):
             "Luminol", "3-aminophthalazide", "Forensics, biology", 1938
         )
 
-        self.play(ShowCreation(profile))
+        self.play(profile.creation_anim())
 
         self.wait()
 
@@ -402,13 +462,18 @@ class Synthesis(Scene):
 
 
 class LuminolReactionMechanism(MechanismScene):
+    steps_list = [
+        "Deprotonation (removal\\\\of hydrogen) and\\\\dianion formation",
+        "Rearrangement of charges\\\\(tautomerisation)",
+        "Liberation of $\\text{N}_2$\\\\and formation of\\\\unstable 3-APA (3-APA*)",
+        "Release of photon\\\\emitting blue light",
+    ]
+
     def construct(self):
+        global endoperoxide  # needed for reasoning scene
 
         self.add_steps(
-            "Deprotonation (removal\\\\of hydrogen) and\\\\dianion formation",
-            "Rearrangement of charges\\\\(tautomerisation)",
-            "Liberation of $\\text{N}_2$\\\\and formation of\\\\unstable 3-APA (3-APA*)",
-            "Release of photon\\\\emitting blue light",
+            *self.steps_list,
             extra_methods="shift(UP*0.65)",
         )
 
@@ -492,6 +557,7 @@ class LuminolReactionMechanism(MechanismScene):
         self.play(self.steps.animate.fade_all_but(2))
 
         o2 = ChemObject(O2).next_to(luminol.chem, buff=0.75)
+        o2.scale(0.75)
 
         self.play(Write(o2))
 
@@ -499,14 +565,14 @@ class LuminolReactionMechanism(MechanismScene):
             MoveAlongPath(
                 o2[0][2],
                 ArcBetweenPoints(
-                    o2[0][2].get_center(), o2[0][2].get_center() + UP + 0.05 * LEFT
+                    o2[0][2].get_center(),
+                    o2[0][2].get_center() + UP * 0.75 + 0.05 * LEFT,
                 ),
             ),
             o2[0][3].animate.shift(RIGHT * 0.05),
         )
 
         self.play(
-            o2.animate.scale(0.75),
             o2.animate.next_to(luminol.chem[0][16], DOWN, buff=0.8),
             Transform(
                 luminol.chem[0][14],
@@ -514,9 +580,22 @@ class LuminolReactionMechanism(MechanismScene):
             ),
             Transform(
                 luminol.chem[0][10],
-                ## NOTE: This is totally not a weird workaround...
-                o2[0][3].copy().next_to(luminol.chem[0][4], UP, buff=0.85),
+                ## This is totally not a weird workaround...
+                o2[0][3].copy().scale(1.5).next_to(luminol.chem[0][4], UP, buff=0.85),
             ),
+        )
+
+        # self.add(
+        #     get_submobject_index_labels(luminol.chem[0]).set_color(BLUE),
+        #     get_submobject_index_labels(o2[0]).set_color(RED),
+        # )
+
+        ## To be used in ReasonsBehindChemiluminescence
+        endoperoxide = VGroup(
+            luminol.chem[0][0:9].copy(),
+            luminol.chem[0][10:13].copy(),
+            luminol.chem[0][14:].copy(),
+            o2[0][:].copy(),
         )
 
         self.wait()
@@ -578,7 +657,8 @@ class LuminolReactionMechanism(MechanismScene):
                 charge="*",
             ).scale(0.75),
             "3-Aminophthalamine* (3-APA*)",
-        ).shift(LEFT * 2)
+        ).shift(LEFT * 4.5)
+        three_APA.name.scale(0.75).shift(UP * 0.5)
 
         three_APA.chem[0][45:].shift(RIGHT * 0.2)
         o2[0][0].clear_updaters()
@@ -640,7 +720,7 @@ class LuminolReactionMechanism(MechanismScene):
                     three_APA.chem[0][0:18], three_APA.chem[0][45:63], three_APA.name
                 )
             ),
-            three_APA.chem[0][18:45].animate.shift(LEFT * 2.5),
+            # three_APA.chem[0][18:45].animate.shift(LEFT * 2.5),
             ReplacementTransform(three_APA.chem[0][63], light),
         )
         self.add(light_boundary)
@@ -672,9 +752,9 @@ class LuminolReactionMechanism(MechanismScene):
                 # .scale(0.8)
             ),
         )
-        self.wait(3)
+        self.wait(5)
         ## Step 4 end
-
+        self.clear()
         ## Debug Stuff
         # self.add(get_submobject_index_labels(three_APA.chem[0]))
         # self.add(get_submobject_index_labels(o2[0]))
@@ -825,6 +905,18 @@ class EnergyDiagramIntermission(Scene):
 
     def get_jablonski_diagrams(self):
         return [JablonskiDiagram(label, 5) for label in ["S_{0}", "S_{1}", "T_{1}"]]
+
+
+class SomeDefinitions(Scene):
+    def construct(self):
+        head = Text("PAUSE for basic definitions").to_edge(UP, buff=1.5)
+        definitions = BulletedList(
+            "Triplet State - A molecule is said to be in a triplet state\\\\if there's at least one unpaired electron\\\\in its orbitals.",
+            "Singlet State - And a singlet state is one in which\\\\there're no unpaired electrons in its orbitals.",
+        ).center()
+
+        self.add(head, definitions)
+        self.wait()
 
 
 class Show(Write):
@@ -1141,3 +1233,231 @@ class ImNotAChemistYaKnow(Scene):
         self.wait()
         self.clear()
         self.wait(2)
+
+
+class DisclaimerMechanismComplexAndABitUnknown(Scene):
+    def construct(self):
+        head = Text("Disclaimer", weight=BOLD).center().shift(UP * 2).scale(2)
+
+        disc = Paragraph(
+            "The mechanism explained here",
+            "is the most commonly accepted proposal",
+            "and the complete mechanism of the",
+            "reaction is still a matter of debate.",
+        ).next_to(head, DOWN * 4)
+        self.play(Write(head), FadeIn(disc), run_time=3)
+        self.wait()
+
+
+class ReasonsBehindChemiluminescence(LuminolReactionMechanism):
+    ##NOTE: Start render from 27th anim i.e. with `-n 27`
+    def construct(self):
+        super().construct()
+        self.clear()
+        self.setup()
+        self.add_steps(
+            *super().steps_list,
+            extra_methods="shift(UP*0.65)",
+        )
+
+        self.play(
+            self.steps.animate.fade_all_but(2),
+            AnimationGroup(*[Write(part) for part in endoperoxide]),
+        )
+        # self.add(
+        #     get_submobject_index_labels(endoperoxide[0]).set_color(RED),
+        #     get_submobject_index_labels(endoperoxide[1]).set_color(BLUE),
+        #     get_submobject_index_labels(endoperoxide[2]).set_color(GREEN),
+        #     get_submobject_index_labels(endoperoxide[3]).set_color(YELLOW),
+        # )
+
+        self.endoperoxide_label = endoperoxide_label = Tex("Endoperoxide").next_to(
+            endoperoxide, DOWN * 2
+        )
+
+        self.play(
+            FadeInFrom(endoperoxide_label),
+        )
+
+        # console.print(endoperoxide[3][3].get_bottom()-endoperoxide[3][1].get_center())
+        # console.print(endoperoxide[3][3].get_start(),endoperoxide[3][3].get_end())
+        # self.wait()
+
+        self.show_stretching()
+
+        self.wait()
+
+        self.electroncloud = ElectronCloud(endoperoxide[3][0])
+        # self.play(FadeIn(electroncloud))
+        self.wait()
+
+    def show_stretching(self):
+        endoperoxide.save_state()
+
+        self.add_endoperoxide_updaters()
+        # console.print(endoperoxide[1][0].get_top(),endoperoxide[1][0].get_bottom())
+        # console.print(
+        #     endoperoxide[1][0].points,
+        #     endoperoxide[3][1].points,
+        #     endoperoxide[3][3].points,
+        # )
+
+        # bond_length_decrementer = ValueTracker(1)
+
+        # def C_O_bond_updater(m: VMobject):
+        #     m.next_to(endoperoxide[0][6], UP, buff=0).stretch(
+        #         bond_length_decrementer.get_value(), 1
+        #     )
+        #     return m
+
+        # endoperoxide[1][0].add_updater(C_O_bond_updater)
+
+        self.play(endoperoxide[3][3].animate.set_color(BLUE))
+
+        describer_arrow = Arrow(ORIGIN, LEFT).next_to(
+            endoperoxide[3][3], RIGHT, buff=0.35
+        )
+
+        describer_text = Text('Stretching of\noxygen bond\n(aka a "vibrational mode")')
+
+        describer_text.scale(0.5).next_to(describer_arrow, RIGHT, buff=0.25)
+
+        description = VGroup(
+            describer_text,
+            describer_arrow,
+        ).add_background_rectangle()
+
+        self.clouds = clouds = VGroup(
+            ElectronCloud(endoperoxide[3][1]),
+            ElectronCloud(endoperoxide[3][0]),
+        )
+
+        self.cloud_describer_arrow = Arrow(ORIGIN, RIGHT).next_to(
+            self.clouds[0], LEFT, buff=SMALL_BUFF
+        )
+        self.cloud_describer_text = (
+            Text("Delocalised\nelectrons")
+            .scale(0.5)
+            .add_background_rectangle()
+            .next_to(self.cloud_describer_arrow, LEFT, buff=0)
+        )
+
+        self.description_cloud = description_cloud = VGroup(
+            self.cloud_describer_text, self.cloud_describer_arrow
+        )
+        self.play(
+            ShowCreation(description),
+            ShowCreation(description_cloud),
+        )
+
+        # clouds[1].add_updater(lambda m: m.move_to(endoperoxide[3][0]))
+        for _ in range(3):
+            # self.play(
+            #     bond_length_decrementer.animate.set_value(0.85),
+            # )
+
+            # self.play(bond_length_decrementer.animate.set_value(1.2))
+
+            self.play(
+                # AnimationGroup(
+                ## This workaround works way better than I expected
+                ApplyMethod(
+                    endoperoxide[1][0].become,
+                    endoperoxide[3][3]
+                    .copy()
+                    .clear_updaters()
+                    .set_color(WHITE)
+                    .next_to(endoperoxide[0][6], UP, buff=0),
+                    rate_func=there_and_back,
+                ),
+                FadeInThenOut(clouds)
+                # ),
+            )
+
+        self.play(
+            FadeOut(description),
+            FadeOut(description_cloud),
+        )
+
+        self.clear_endoperoxide_updaters()
+
+    def add_endoperoxide_updaters(self):
+        endoperoxide[3][1].add_updater(
+            lambda m: m.next_to(endoperoxide[1][0], UP, buff=0.02)
+        )
+
+        endoperoxide[3][3].add_updater(
+            lambda m: m.put_start_and_end_on(
+                m.get_top(), endoperoxide[3][1].get_center() + UP * 0.2
+            )
+        )
+
+    def clear_endoperoxide_updaters(self):
+        endoperoxide[3][1].clear_updaters()
+        endoperoxide[3][3].clear_updaters()
+        endoperoxide[1][0].clear_updaters()
+
+
+class ReasonsBehindChemiluminescenceSecondPart(ReasonsBehindChemiluminescence):
+    # NOTE: Use -n 39 here
+    def construct(self):
+        super().construct()
+        self.add_endoperoxide_updaters()
+        self.clouds[0].shift(DOWN * 0.2)
+        self.play(
+            FadeIn(self.clouds),
+            ApplyMethod(
+                endoperoxide[1][0].become,
+                endoperoxide[3][3]
+                .copy()
+                .clear_updaters()
+                .set_color(WHITE)
+                .next_to(endoperoxide[0][6], UP, buff=0),
+            ),
+            ShowCreation(self.description_cloud),
+        )
+        self.play(
+            Transform(
+                self.cloud_describer_text,
+                Text("Localised\nelectrons")
+                .scale(0.5)
+                .next_to(self.cloud_describer_arrow, LEFT, buff=0)
+                .add_background_rectangle(),
+            ),
+            self.clouds.animate.set_color(YELLOW)
+        )
+        self.add(get_submobject_index_labels(endoperoxide[0]))
+        # self.wait()
+
+
+class ElectronCloudTest(Scene):
+    def construct(self):
+        cloud = VGroup(Arc(0, TAU / 2), Polygon(LEFT, RIGHT, DOWN * 2)).set_fill(
+            BLUE_B, 0.85
+        )
+
+        self.add(cloud)
+
+
+class ElectronCloud(Dot):
+    def __init__(
+        self, atom: TexSymbol, color=BLUE, fill_opacity=0.35, radius=0.3, **kwargs
+    ):
+        super().__init__(
+            atom.get_center(),
+            color=color,
+            fill_opacity=fill_opacity,
+            radius=radius,
+            **kwargs,
+        )
+
+
+class FadeInThenOut(Succession):
+    def __init__(self, mobject: Union[Mobject, VMobject], run_time=1, **kwargs):
+        super().__init__(
+            FadeIn(mobject, run_time=run_time / 2),
+            FadeOut(mobject, run_time=run_time / 2),
+            **kwargs,
+        )
+
+
