@@ -2,9 +2,9 @@ from chanim import *
 # from periodic_table import PeriodicTable
 
 OUTPUT_DIRECTORY = "KilaCoda/markovnikoff"
+config.tex_template = TexTemplateLibrary.simple
 
 ## Silly common constructs
-
 class InductiveArrows(VMobject):
     """Arrows indicating an inductive effect
 
@@ -44,7 +44,7 @@ class InductiveArrows(VMobject):
 
     def fade_in_one_by_one(self):
         return LaggedStartMap(
-            FadeInFromDown,self
+            FadeInFrom,self
         )
 
 ## Other Scenes
@@ -75,7 +75,7 @@ class IntroBadJoke(Scene):
 
         consolation = TextMobject("But there is something similar.").to_edge(DOWN,1.5)
 
-        self.play(FadeInFromDown(consolation));self.wait(3)
+        self.play(FadeInFrom(consolation));self.wait(3)
 
 
 class TitleScene(Scene):
@@ -180,7 +180,7 @@ class NormalMarksAddition(Scene):
         # ]
         example[-1].shift(DOWN*0.5)
 
-        self.play(FadeInFromDown(example[:-1]));self.wait()
+        self.play(FadeInFrom(example[:-1]));self.wait()
         # self.add(get_submobject_index_labels(example[0]))
         # print_family(example[0])
         sbe = split_bond_electrons =VGroup(SmallDot(),SmallDot()).arrange(RIGHT,buff=0.15).set_color(YELLOW)
@@ -270,7 +270,7 @@ class NormalMarksAddition(Scene):
             Transform(
                 final,cleaner_final.chem
             ),
-            FadeInFromDown(cleaner_final.name),
+            FadeInFrom(cleaner_final.name),
             FadeOut(final_descriptor_bonds)
         );self.wait(2)
 
@@ -288,7 +288,7 @@ class NormalMarksAdditionWithoutFootnote(Scene):
         # ]
         example[-1].shift(DOWN*0.5)
 
-        self.play(FadeInFromDown(example[:-1]));self.wait()
+        self.play(FadeInFrom(example[:-1]));self.wait()
         # self.add(get_submobject_index_labels(example[0]))
         # print_family(example[0])
         sbe = split_bond_electrons =VGroup(SmallDot(),SmallDot()).arrange(RIGHT,buff=0.15).set_color(YELLOW)
@@ -378,7 +378,7 @@ class NormalMarksAdditionWithoutFootnote(Scene):
             Transform(
                 final,cleaner_final.chem
             ),
-            FadeInFromDown(cleaner_final.name),
+            FadeInFrom(cleaner_final.name),
             FadeOut(final_descriptor_bonds)
         );self.wait(2)
 
@@ -392,7 +392,7 @@ class StepsScene(Scene):
         "title_scale_factor":1.4,
         "steps":[],
         "unfaded_index":None,
-        "steps_play_animation":FadeInFromDown,
+        "steps_play_animation":FadeInFrom,
         "add_steps_one_by_one":True,
         "play_or_add_steps":"play"
     }
@@ -540,7 +540,7 @@ class Step0(Scene):
         focus_rect = SurroundingRectangle(inductive_effect_arrows)
         inductive_effect_text = TextMobject("Inductive Effect").next_to(hydrogen_halide,UP,buff=1.5)
         self.play(
-            ShowCreation(focus_rect),FadeInFromDown(inductive_effect_text)
+            ShowCreation(focus_rect),FadeInFrom(inductive_effect_text)
         );self.wait()
 
 
@@ -694,7 +694,7 @@ class BetterCarbocations(Scene):
                 Write,arranged_carbocations
             ),
             LaggedStartMap(
-                FadeInFromDown,classifications
+                FadeInFrom,classifications
             )
         );self.wait()
 
@@ -843,7 +843,7 @@ class BetterCarbocationHere(Scene):
 
         self.play(Write(cancel));self.wait(2)
 
-        self.play(FadeInFromDown(regioselectivity))
+        self.play(FadeInFrom(regioselectivity))
         self.play(AnimationOnSurroundingRectangle(regioselectivity,rect_animation=ShowCreationThenDestruction),run_time=2.5)
 
         self.wait(3)
@@ -1019,14 +1019,14 @@ class KharaschEffectTeaser(Scene):
 
         title = Title("Kharasch/Anti-Markovnikov Effect",tex_to_color_map={"Kharasch":RED,"Anti-Markovnikov":BLUE},include_underline=False)
 
-        self.play(FadeInFromDown(title));self.wait(2)
+        self.play(FadeInFrom(title));self.wait(2)
         self.play(
             Write(
                 VGroup(
                     react[0],react[2]
                 )
             ),
-            FadeInFromDown(react[1])
+            FadeInFrom(react[1])
         );self.wait()
 
 
@@ -1050,11 +1050,11 @@ class ReactionTest(Scene):
         #             react[0:7],react[8:]
         #         )
         #     ),
-        #     FadeInFromDown(react[7])
+        #     FadeInFrom(react[7])
         # );self.wait()
         self.play(Write(react));self.wait(2)
         # self.play(
-        #     FadeInFromDown(react[0:6])
+        #     FadeInFrom(react[0:6])
         # );self.wait(2)
         # print_family(react)
         # self.add(get_submobject_index_labels(react[-1]))
