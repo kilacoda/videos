@@ -108,8 +108,7 @@ class PinacolRearrangementMechanism(Scene):
         self.play(FadeOutAndShift(pinacol.name, LEFT), FadeInFrom(sulfurina))
         # self.wait(2)
 
-        self.play(sulfurina.animate.shift(2 * RIGHT + UP))
-
+        self.play(sulfurina.animate.shift(2.075 * RIGHT + 1.3 * UP))
         ## Looks like the charge macro's going to be a PITA for this one...
         # print_family(pinacol.chem[0][26])
         # self.play(pinacol.chem[0][25].animate.set_color(YELLOW))
@@ -128,6 +127,123 @@ class PinacolRearrangementMechanism(Scene):
         ## hah, they'll never know... I've got the power of bad, hacky code on my side!
         pinacol.chem[0][26].become(dots[0])
         pinacol.chem[0][27].become(dots[1])
+
+        oxy_elec_grp_1 = VGroup(
+            pinacol.chem[0][26],
+            pinacol.chem[0][27],
+        )
+
+        self.play(
+            Rotate(oxy_elec_grp_1, PI / 2),
+        )
+
+        self.play(
+            oxy_elec_grp_1.animate.shift(DOWN * 0.1),
+        )
+
+        # self.wait()
+
+        # self.add(index_labels(sulfurina[0]))
+
+        self.play(
+            Transform(
+                sulfurina[0][2], ElectronPair(pair_buff=0.1).move_to(sulfurina[0][2])
+            )
+        )
+
+        OH_bond = (
+            Line(start=pinacol.chem[0][26], end=pinacol.chem[0][27])
+            .match_style(pinacol.chem[0][29])
+            .stretch_to_fit_height(0.3)
+        )
+
+        self.play(
+            sulfurina[0][2].animate.next_to(sulfurina[0][1], UP, buff=0.125),
+            FadeOut(oxy_elec_grp_1),
+            ShowCreation(OH_bond),
+        )
+        self.wait()
+
+        # h2_grp = VGroup(sulfurina[0][0], pinacol.chem[0][28])
+        h2 = (
+            ChemObject("H_2")
+            .move_to(pinacol.chem[0][28])
+            .shift(DOWN * 0.03 + RIGHT * 0.1)
+        )
+
+        self.play(
+            Transform(pinacol.chem[0][28], h2),
+            Transform(OH_bond, MathTex("\\oplus").move_to(OH_bond)),
+            FadeOutAndShift(
+                VGroup(
+                    sulfurina[0][1],
+                    sulfurina[0][2],
+                    sulfurina[0][3],
+                    sulfurina[0][4],
+                    sulfurina[0][5],
+                    sulfurina[0][6],
+                    sulfurina[0][7],
+                ),
+                RIGHT,
+            ),
+            FadeOutAndShift(
+                sulfurina[0][0],
+                pinacol.chem[0][28].get_center() - sulfurina[0][0].get_center(),
+            ),
+        )
+
+        self.play(
+            Transform(
+                pinacol.chem[0][29],
+                ElectronPair().rotate(PI / 2).move_to(pinacol.chem[0][29]),
+            )
+        )
+
+        carbcation_indicator = (
+            MathTex("\\oplus")
+            .next_to(pinacol.chem[0][17], DOWN, buff=0.1)
+            .shift(LEFT * 0.3 + UP * 0.1)
+        )
+
+        self.play(
+            pinacol.chem[0][29]
+            .animate.rotate(PI / 2)
+            .next_to(pinacol.chem[0][23], UP, buff=0.1),
+            ShowCreation(carbcation_indicator),
+            Uncreate(OH_bond),
+        )
+        # self.add(
+        #     index_labels(pinacol.chem[0]).set_color(YELLOW),
+        #     index_labels(sulfurina[0]).set_color(RED),
+        # )
+        self.wait()
+
+        leaving_water = VGroup(
+            pinacol.chem[0][23],
+            pinacol.chem[0][24],
+            pinacol.chem[0][25],
+            # pinacol.chem[0][26],
+            # pinacol.chem[0][27],
+            pinacol.chem[0][28],
+            pinacol.chem[0][29],
+            # sulfurina[0][0],
+        )
+        self.play(
+            Transform(
+                leaving_water,
+                ChemObject("H_2 \\charge{45=\\:,315=\\:}{O}")
+                .move_to(leaving_water)
+                .shift(DOWN),
+            ),
+        )
+
+        self.wait()
+
+        self.play(
+            leaving_water.animate.shift(DOWN * 3),
+        )
+
+        
         # self.play(
         # Transform(pinacol.chem[0][26], dots[0]),
         # Transform(pinacol.chem[0][27], dots[1])
@@ -141,13 +257,12 @@ class PinacolRearrangementMechanism(Scene):
         # # self.remove(pinacol.chem[0][27])
         # self.add(dot_grp_1)
         # print_family(pinacol.chem[0][27])
-        print_family(pinacol.chem[0][25])
+        # print_family(pinacol.chem[0][25])
         # self.add(index_labels(pinacol.chem[0]))
 
         # self.play(
         # ApplyMethod(pinacol.chem[0][27].shift,DOWN, rate_func=there_and_back)
         # )
-        self.wait()
 
 
 ## aah frick.
@@ -204,6 +319,7 @@ def charge_to_dots(charge: TexSymbol):
     dots[0].shift(-arrange_direction * buff)
     dots[1].shift(arrange_direction * buff)
 
+    dots.buff = buff
     # dots.add(buff_line, charge_copy)
     dots.move_to(charge)
 
@@ -234,7 +350,7 @@ class TestCharge(Scene):
             # dots_from_charge[1].set_color(BLUE),
         )
 
-        self.wait()
+        # self.wait()
 
 
 class FuckYouChemfig(Scene):
@@ -253,3 +369,4 @@ class FuckYouChemfig(Scene):
             ]
         )
         print(mob.current_path_start, mob.points)
+
