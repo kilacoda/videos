@@ -6,7 +6,6 @@ DIANION_1 = "*6(-=*6(-(=O)-\\charge{45:2pt=$\\scriptstyle-$}{N}-\\charge{45:2pt=
 O2 = "O(=[-2]O)"
 endoperoxide = None
 
-config["tex_template"] = TexTemplateLibrary.simple
 
 ## Custom Mobjects ##
 class JablonskiDiagram(VGroup):
@@ -66,7 +65,7 @@ class MechanismScene(Scene):
         self.steps_header = (
             Text("Steps").next_to(self.divider).set_y(config["frame_y_radius"] - 1.5)
         )
-        self.play(ShowCreation(self.divider), Write(self.steps_header))
+        self.play(Create(self.divider), Write(self.steps_header))
 
     def add_steps(
         self,
@@ -140,7 +139,8 @@ class LuminolIntro(Scene):
         self.wait(2)
 
         self.play(
-            FadeOutAndShift(luminol.name), luminol.chem.animate.shift(DOWN + 4 * LEFT)
+            FadeOut(luminol.name, shift=DOWN),
+            luminol.chem.animate.shift(DOWN + 4 * LEFT),
         )
 
         # luminol_para = Paragraph(
@@ -167,22 +167,22 @@ class LuminolIntro(Scene):
         )
 
         self.play(
-            FadeInFrom(luceferin_group[0], UP),
-            FadeInFrom(luceferin_group[1], DOWN),
+            FadeIn(luceferin_group[0], shift=DOWN),
+            FadeIn(luceferin_group[1], shift=UP),
         )
 
         self.wait()
 
         self.play(
-            FadeInFrom(glow_stick_group[0], UP),
-            FadeInFrom(glow_stick_group[1], DOWN),
+            FadeIn(glow_stick_group[0], DOWN),
+            FadeIn(glow_stick_group[1], UP),
         )
 
         self.wait()
 
         self.play(
-            FadeOutAndShift(luceferin_group),
-            FadeOutAndShift(glow_stick_group),
+            FadeOut(luceferin_group, shift=DOWN),
+            FadeOut(glow_stick_group, shift=DOWN),
         )
 
 
@@ -283,8 +283,8 @@ class MoleculeProfile(VGroup):
 
     def creation_anim(self):
         title_anim = FadeIn(self.title)
-        field_anims = [FadeInFrom(line) for line in self.fields.chars]
-        value_anims = [FadeInFrom(line) for line in self.values.chars]
+        field_anims = [FadeIn(line,shift=UP) for line in self.fields.chars]
+        value_anims = [FadeIn(line,shift=UP) for line in self.values.chars]
         divider_anim = FadeIn(self.divider)
         underline_anim = DrawBorderThenFill(self.underline)
         console.print("Hi! From line 281")
@@ -318,7 +318,7 @@ class Synthesis(Scene):
         self.steps_header = (
             Text("Steps").next_to(self.divider).set_y(config["frame_y_radius"] - 1.5)
         )
-        self.play(ShowCreation(self.divider), Write(self.steps_header))
+        self.play(Create(self.divider), Write(self.steps_header))
 
     def construct(self):
         self.steps = (
@@ -392,7 +392,7 @@ class Synthesis(Scene):
             hydrazine[0][1],
             hydrazine[0][2],
         )
-        self.play(FadeOutAndShift(water_grp_1, UP), FadeOutAndShift(water_grp_2, DOWN))
+        self.play(FadeOut(water_grp_1, shift=UP), FadeOut(water_grp_2, shift=DOWN))
 
         hydrazine = VGroup(
             hydrazine[0][0],
@@ -425,12 +425,12 @@ class Synthesis(Scene):
 
         self.wait(2)
         self.play(
-            FadeOutAndShift(npa[0][23], UP), FadeInFrom(hydrogen), Write(footnote)
+            FadeOut(npa[0][23], shift=UP), FadeIn(hydrogen,shift=UP), Write(footnote)
         )
         self.wait()
         self.play(
-            FadeOutAndShift(sodium_thiocyanide),
-            FadeOutAndShift(footnote),
+            FadeOut(sodium_thiocyanide,shift=DOWN),
+            FadeOut(footnote,shift=DOWN),
             hydrogen.animate.set_color(WHITE),
         )
         luminol_created = VGroup(
@@ -457,8 +457,8 @@ class Synthesis(Scene):
             VGroup(luminol_created, luminol_label).center,
         )
         self.add(
-            get_submobject_index_labels(hydrazine[0]),
-            get_submobject_index_labels(npa[0]),
+            index_labels(hydrazine[0]),
+            index_labels(npa[0]),
         )
 
 
@@ -511,8 +511,8 @@ class LuminolReactionMechanism(MechanismScene):
         ## Step 1 start
         self.play(self.steps.animate.fade_all_but(0))
         self.play(
-            FadeInFrom(self.hydroxide_1, UP),
-            FadeInFrom(self.hydroxide_2, DOWN),
+            FadeIn(self.hydroxide_1, DOWN),
+            FadeIn(self.hydroxide_2, UP),
         )
 
         self.play(
@@ -545,9 +545,9 @@ class LuminolReactionMechanism(MechanismScene):
                 .move_to(self.luminol.chem[0][10])
                 .shift(UP * 0.5),
             ),
-            FadeOutAndShift(self.luminol.name),
-            FadeOutAndShift(water_group_1, UP),
-            FadeOutAndShift(water_group_2, DOWN),
+            FadeOut(self.luminol.name, shift=DOWN),
+            FadeOut(water_group_1, shift=UP),
+            FadeOut(water_group_2, shift=DOWN),
         )
         ## Step 1 end
 
@@ -745,7 +745,7 @@ class LuminolReactionMechanism(MechanismScene):
                 ),
                 self.three_APA.chem,
             ),
-            FadeInFrom(self.three_APA.name),
+            FadeIn(self.three_APA.name,shift=UP),
         )
         ## Step 3 end
 
@@ -759,12 +759,12 @@ class LuminolReactionMechanism(MechanismScene):
         )
         self.wait()
         self.play(
-            FadeOutAndShift(
+            FadeOut(
                 VGroup(
                     self.three_APA.chem[0][0:18],
                     self.three_APA.chem[0][45:63],
                     self.three_APA.name,
-                )
+                ), shift=DOWN
             ),
             # self.three_APA.chem[0][18:45].animate.shift(LEFT * 2.5),
             ReplacementTransform(self.three_APA.chem[0][63], light),
@@ -790,10 +790,10 @@ class LuminolReactionMechanism(MechanismScene):
             #     .set_opacity(0.65),
             #     run_time=0.5,
             # ),
-            FadeInFrom(
+            FadeIn(
                 ImageMobject(Path(".\\references\luminol_light.jpg"))
                 .to_edge(RIGHT)
-                .shift(RIGHT)
+                .shift(RIGHT),shift=UP
                 # .next_to(light, buff=2)
                 # .scale(0.8)
             ),
@@ -839,7 +839,7 @@ class EnergyDiagramIntermission(Scene):
                     t1,
                 )
             ),
-            FadeInFrom(trend_arrow[1]),
+            FadeIn(trend_arrow[1],shift=UP),
         )
 
         vibrational_states_brace = BraceText(
@@ -860,7 +860,7 @@ class EnergyDiagramIntermission(Scene):
             .scale(0.5),
         )
 
-        self.play(ShowCreation(explanations))
+        self.play(Create(explanations))
         self.wait()
         self.play(Uncreate(explanations))
 
@@ -886,12 +886,12 @@ class EnergyDiagramIntermission(Scene):
             return mob
 
         self.play(
-            ShowCreation(intersystem_crossing_arrow),
+            Create(intersystem_crossing_arrow),
             intersystem_crossing_label.creation_anim(),
         )
 
         self.wait()
-        self.play(FadeOutAndShift(intersystem_crossing_label))
+        self.play(FadeOut(intersystem_crossing_label,shift=DOWN))
 
         self.play(
             # Rotate(electron),
@@ -976,7 +976,7 @@ class Show(Write):
         return (0, alpha)
 
 
-class Show2(ShowCreation):
+class Show2(Create):
     """
     Show a Mobject without animation.
     """
@@ -1002,8 +1002,8 @@ class SynthesisVideoSuggestion(Scene):
         self.play(
             Write(nurdrage_text),
             Write(nilered_text),
-            ShowCreation(nurdrage_box),
-            ShowCreation(nilered_box),
+            Create(nurdrage_box),
+            Create(nilered_box),
         )
         self.wait(2)
 
@@ -1026,8 +1026,8 @@ class LuminolInstagram(Scene):
         self.wait()
 
         self.play(
-            FadeInFrom(hydroxide_1, UP),
-            FadeInFrom(hydroxide_2, DOWN),
+            FadeIn(hydroxide_1, shift=DOWN),
+            FadeIn(hydroxide_2, shift=UP),
         )
 
         self.play(
@@ -1054,9 +1054,9 @@ class LuminolInstagram(Scene):
                 luminol.chem[0][10],
                 MathTex("\\scriptstyle-").move_to(luminol.chem[0][10]).shift(UP * 0.5),
             ),
-            FadeOutAndShift(luminol.name),
-            FadeOutAndShift(water_group_1, UP),
-            FadeOutAndShift(water_group_2, DOWN),
+            FadeOut(luminol.name,shift=DOWN),
+            FadeOut(water_group_1, shift=UP),
+            FadeOut(water_group_2, shift=DOWN),
         )
 
         self.play(
@@ -1214,7 +1214,7 @@ class LuminolInstagram(Scene):
                 ),
                 three_APA.chem,
             ),
-            FadeInFrom(three_APA.name),
+            FadeIn(three_APA.name,shift=UP),
         )
         light = Tex("h$\\nu$").center().shift(RIGHT * 1.5)
         light_boundary = AnimatedBoundary(
@@ -1222,10 +1222,11 @@ class LuminolInstagram(Scene):
         )
         self.wait()
         self.play(
-            FadeOutAndShift(
+            FadeOut(
                 VGroup(
                     three_APA.chem[0][0:18], three_APA.chem[0][45:63], three_APA.name
-                )
+                ),
+                shift=DOWN
             ),
             three_APA.chem[0][18:45].animate.shift(LEFT * 2.5),
             ReplacementTransform(three_APA.chem[0][63], light),
@@ -1251,10 +1252,11 @@ class LuminolInstagram(Scene):
                 .set_opacity(0.65),
                 run_time=0.5,
             ),
-            FadeInFrom(
+            FadeIn(
                 ImageMobject(Path(".\\references\luminol_light.jpg"))
                 .next_to(light, buff=2)
-                .scale(0.8)
+                .scale(0.8),
+                shift=UP
             ),
         )
         self.wait(3)
@@ -1279,7 +1281,7 @@ class AminoPhthalate(Scene):
             "*6(-=(-(=[-2]O)-[:36]\\charge{45:2pt=$\\scriptstyle-$}{O})-(-(=[2]O)-[:-36]\\charge{45:2pt=$\\scriptstyle-$}{O})=-=)"
         )
 
-        self.add(three_APA, get_submobject_index_labels(three_APA[0]))
+        self.add(three_APA, index_labels(three_APA[0]))
 
 
 class ImNotAChemistYaKnow(Scene):
@@ -1334,7 +1336,7 @@ class ReasonsBehindChemiluminescence(LuminolReactionMechanism):
         )
 
         self.play(
-            FadeInFrom(endoperoxide_label),
+            FadeIn(endoperoxide_label,shift=UP),
         )
 
         # console.print(endoperoxide[3][3].get_bottom()-endoperoxide[3][1].get_center())
@@ -1404,8 +1406,8 @@ class ReasonsBehindChemiluminescence(LuminolReactionMechanism):
             self.cloud_describer_text, self.cloud_describer_arrow
         )
         self.play(
-            ShowCreation(description),
-            ShowCreation(description_cloud),
+            Create(description),
+            Create(description_cloud),
         )
 
         # clouds[1].add_updater(lambda m: m.move_to(endoperoxide[3][0]))
@@ -1472,7 +1474,7 @@ class ReasonsBehindChemiluminescenceSecondPart(ReasonsBehindChemiluminescence):
                 .set_color(WHITE)
                 .next_to(endoperoxide[0][6], UP, buff=0),
             ),
-            ShowCreation(self.description_cloud),
+            Create(self.description_cloud),
         )
         self.wait()
 
@@ -1524,12 +1526,13 @@ class ReasonsBehindChemiluminescenceSecondPart(ReasonsBehindChemiluminescence):
         photon.add_updater(some_updater)
 
         self.play(
-            FadeOutAndShift(part_1, UP),
-            FadeOutAndShift(part_2, DOWN),
-            FadeOutAndShift(
+            FadeOut(part_1, shift=UP),
+            FadeOut(part_2, shift=DOWN),
+            FadeOut(
                 endoperoxide[2][1],
                 0.5
                 * (endoperoxide[3][3].get_center() - endoperoxide[2][1].get_center()),
+                shift=DOWN
             ),
             FadeOut(bond_break),
             Transform(
@@ -1560,10 +1563,10 @@ class ReasonsBehindChemiluminescenceSecondPart(ReasonsBehindChemiluminescence):
         )
         self.wait(3)
         self.add(
-            get_submobject_index_labels(endoperoxide[0]).set_color(RED),
-            get_submobject_index_labels(endoperoxide[1]).set_color(BLUE),
-            get_submobject_index_labels(endoperoxide[2]).set_color(GREEN),
-            get_submobject_index_labels(endoperoxide[3]).set_color(YELLOW),
+            index_labels(endoperoxide[0]).set_color(RED),
+            index_labels(endoperoxide[1]).set_color(BLUE),
+            index_labels(endoperoxide[2]).set_color(GREEN),
+            index_labels(endoperoxide[3]).set_color(YELLOW),
         )  # self.wait()
 
 
@@ -1624,7 +1627,7 @@ class SynthesisTitleCard(Scene):
     def construct(self):
         text = Text("Part 1: Synthesis", t2c={": Synthesis": RED})
 
-        self.play(FadeInFrom(text))
+        self.play(FadeIn(text,shift=UP))
         self.wait()
 
 
@@ -1632,7 +1635,7 @@ class MechanismTitleCard(Scene):
     def construct(self):
         text = Text("Part 2: Mechanism", t2c={": Mechanism": BLUE})
 
-        self.play(FadeInFrom(text))
+        self.play(FadeIn(text,shift=UP))
         self.wait()
 
 
@@ -1643,7 +1646,7 @@ class ReasoningTitleCard(Scene):
             t2c={": Reasons behind chemiluminescence": GREEN},
         )
 
-        self.play(FadeInFrom(text))
+        self.play(FadeIn(text,shift=UP))
         self.wait()
 
 
@@ -1652,7 +1655,7 @@ class LuminolSinkFadeInBecauseWhyTheHeckNot(Scene):
     def construct(self):
         img = ImageMobject(Path("./references/luminolsink.jpg")).scale(2)
 
-        self.play(FadeInFrom(img, DOWN, run_time=2))
+        self.play(FadeIn(img, shift=UP, run_time=2))
 
         info_arrow = (
             VGroup(Text("Blood detected\nusing luminol.").scale(0.5), Arrow())
@@ -1672,7 +1675,7 @@ class InThisVideo(Scene):
             .shift(LEFT * 3 + UP * 3)
         )
 
-        self.play(FadeInFrom(title, DOWN))
+        self.play(FadeIn(title, shift=UP))
 
         topics = BulletedList(
             "How do you synthesise luminol?",
@@ -1693,7 +1696,7 @@ class WaitButWhy(Scene):
             qmark, colors=[RED, ORANGE, BLUE, YELLOW]
         )  ##ehh, frick it
 
-        self.play(Write(qmark, run_time=3), ShowCreation(boundary, run_time=3))
+        self.play(Write(qmark, run_time=3), Create(boundary, run_time=3))
         self.wait(7)
 
 
